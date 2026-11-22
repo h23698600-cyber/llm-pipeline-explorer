@@ -5,7 +5,26 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LLM Pipeline Explorer</title>
   <style>
-    /* Reset and baseline styles */
+    /* ----------------------------------------------------
+       GLOBAL BASE & LAYOUT STYLES
+       ---------------------------------------------------- */
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --card-hover: #283548;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --code-bg: #090d16;
+      --code-border: #1e293b;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+
     * {
       box-sizing: border-box;
       margin: 0;
@@ -14,108 +33,1490 @@
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      background-color: #f8fafc;
-      color: #1e293b;
-      line-height: 1.6;
-      padding: 2rem 1rem;
+      background-color: var(--bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    .container {
-      max-width: 800px;
-      margin: 0 auto;
-      background: #ffffff;
-      border-radius: 12px;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-      padding: 2rem;
-      border: 1px solid #e2e8f0;
-    }
-
+    /* Top Navigation Bar */
     header {
-      border-bottom: 2px solid #f1f5f9;
-      padding-bottom: 1.5rem;
-      margin-bottom: 2rem;
-      text-align: center;
+      background-color: #111827;
+      border-bottom: 1px solid var(--card-border);
+      padding: 0.75rem 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 50;
     }
 
-    h1 {
-      font-size: 2rem;
-      color: #0f172a;
-      margin-bottom: 0.5rem;
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
     }
 
-    p.subtitle {
-      color: #64748b;
+    .brand-logo {
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
       font-size: 1rem;
     }
 
-    .card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
     }
 
-    .card h2 {
-      font-size: 1.25rem;
-      margin-bottom: 0.75rem;
-      color: #2563eb;
+    .brand-badge {
+      font-size: 0.7rem;
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #0284c7;
+      padding: 0.15rem 0.45rem;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      font-weight: 600;
     }
 
-    .card p {
-      color: #475569;
-      margin-bottom: 1rem;
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    /* Buttons & Form Controls */
+    select, input, textarea {
+      background-color: #0f172a;
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.45rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+
+    select:focus, input:focus, textarea:focus {
+      border-color: var(--primary);
     }
 
     .btn {
-      display: inline-block;
-      background-color: #2563eb;
-      color: #ffffff;
-      border: none;
-      padding: 0.65rem 1.25rem;
-      font-size: 0.95rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 0.45rem 0.85rem;
+      font-size: 0.85rem;
       font-weight: 500;
       border-radius: 6px;
       cursor: pointer;
-      transition: background-color 0.2s ease;
+      transition: all 0.15s ease;
+      user-select: none;
     }
 
     .btn:hover {
-      background-color: #1d4ed8;
+      background-color: var(--card-hover);
+      border-color: #475569;
     }
 
-    #statusMessage {
-      margin-top: 1rem;
+    .btn-primary {
+      background-color: var(--primary);
+      border-color: var(--primary);
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    .btn-danger {
+      background-color: rgba(239, 68, 68, 0.15);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+
+    .btn-danger:hover {
+      background-color: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-sm {
+      padding: 0.25rem 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    /* Main Container Grid */
+    .app-body {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    @media (max-width: 900px) {
+      .app-body {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: visible;
+      }
+    }
+
+    /* Left Sidebar: Pipeline Graph / DAG steps */
+    .pipeline-pane {
+      background-color: #111827;
+      border-right: 1px solid var(--card-border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+
+    .pane-header {
+      padding: 1rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: #0f172a;
+    }
+
+    .pane-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pipeline-summary {
+      font-size: 0.8rem;
+      color: #cbd5e1;
+      line-height: 1.4;
+      margin-bottom: 0.75rem;
+    }
+
+    .input-box-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-box-group label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
       font-weight: 500;
-      color: #16a34a;
+    }
+
+    /* Step Cards Sequence */
+    .step-list {
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .step-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.85rem;
+      cursor: pointer;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .step-card:hover {
+      background-color: var(--card-hover);
+      border-color: #64748b;
+    }
+
+    .step-card.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+      background-color: #1e2d44;
+    }
+
+    .step-card.status-success {
+      border-left: 4px solid var(--success);
+    }
+
+    .step-card.status-running {
+      border-left: 4px solid var(--primary);
+      animation: pulseBorder 1.5s infinite;
+    }
+
+    .step-card.status-error {
+      border-left: 4px solid var(--danger);
+      background-color: rgba(239, 68, 68, 0.06);
+    }
+
+    .step-card.status-warning {
+      border-left: 4px solid var(--warning);
+    }
+
+    .step-card.status-idle {
+      border-left: 4px solid #64748b;
+    }
+
+    @keyframes pulseBorder {
+      0%, 100% { border-left-color: var(--primary); }
+      50% { border-left-color: #93c5fd; }
+    }
+
+    .step-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.35rem;
+    }
+
+    .step-badge-num {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: #94a3b8;
+      background: #0f172a;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+    }
+
+    .step-name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 0.25rem;
+    }
+
+    .step-type {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .step-metrics {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.5rem;
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      color: #cbd5e1;
+    }
+
+    .metric-pill {
+      background: #0f172a;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      border: 1px solid #1e293b;
+    }
+
+    .step-connector {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #475569;
+      font-size: 0.85rem;
+      margin: -0.3rem 0;
+    }
+
+    /* Right Pane: Inspector Panel */
+    .inspector-pane {
+      display: flex;
+      flex-direction: column;
+      background-color: var(--bg);
+      overflow-y: auto;
+    }
+
+    .inspector-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      background-color: #111827;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .inspector-title-group h2 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .inspector-title-group p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    /* Tab Navigation */
+    .tab-bar {
+      display: flex;
+      background-color: #0f172a;
+      border-bottom: 1px solid var(--card-border);
+      padding: 0 1.5rem;
+      gap: 1.5rem;
+    }
+
+    .tab-item {
+      padding: 0.75rem 0;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+
+    .tab-item:hover {
+      color: #f1f5f9;
+    }
+
+    .tab-item.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .inspector-content {
+      padding: 1.5rem;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* Metrics Bar in Inspector */
+    .metrics-summary-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+    }
+
+    .metric-stat {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .metric-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    .metric-value {
+      font-size: 1.05rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #f1f5f9;
+      margin-top: 0.2rem;
+    }
+
+    /* Monospace Code & Prompt Box */
+    .code-panel {
+      background-color: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .code-panel-header {
+      background-color: #111827;
+      padding: 0.5rem 0.85rem;
+      border-bottom: 1px solid var(--code-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .code-panel-body {
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.5;
+      max-height: 380px;
+      overflow-y: auto;
+    }
+
+    /* Forms in Inspector */
+    .field-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-bottom: 1rem;
+    }
+
+    .field-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .field-group span.sub-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+
+    .field-group textarea {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .params-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    /* Comparison Modal / View */
+    .compare-container {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    .compare-col {
+      background-color: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .compare-header {
+      font-size: 0.95rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.5rem;
+      color: #38bdf8;
+    }
+
+    /* Status Badges */
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-running { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+    .badge-error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .badge-warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .badge-idle { background: #334155; color: #94a3b8; }
+
+    /* Alert Banner */
+    .alert-banner {
+      padding: 0.85rem 1rem;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.6rem;
+      line-height: 1.4;
+      margin-bottom: 1rem;
+    }
+
+    .alert-danger {
+      background-color: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #fca5a5;
+    }
+
+    .alert-warning {
+      background-color: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fde68a;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header>
-      <h1>LLM Pipeline Explorer</h1>
-      <p class="subtitle">An interactive visual guide to understanding how Large Language Models process text.</p>
-    </header>
 
-    <main>
-      <section class="card">
-        <h2>Welcome to the Pipeline</h2>
-        <p>This explorer will break down how an LLM transforms user prompts into responses step-by-step.</p>
-        <button id="testBtn" class="btn">Test Setup</button>
-        <div id="statusMessage"></div>
-      </section>
+  <!-- ====================================================
+       TOP NAVIGATION BAR
+       ==================================================== -->
+  <header>
+    <div class="brand-group">
+      <div class="brand-logo">LLM</div>
+      <div>
+        <span class="brand-title">Pipeline Explorer</span>
+        <span class="brand-badge">Dev Sandbox</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- Pipeline Preset Selection -->
+      <label for="pipelineSelect" style="font-size: 0.8rem; color: var(--text-muted);">Workflow:</label>
+      <select id="pipelineSelect">
+        <option value="rag">1. RAG Q&amp;A Pipeline</option>
+        <option value="extraction">2. Structured Extraction Pipeline</option>
+      </select>
+
+      <!-- Run and Action Controls -->
+      <button id="runPipelineBtn" class="btn btn-primary">
+        <span>&#9654;</span> Run Full Pipeline
+      </button>
+
+      <button id="toggleErrorBtn" class="btn">
+        <span id="errorToggleIcon">&#9888;</span> <span id="errorToggleLabel">Simulate Error: OFF</span>
+      </button>
+
+      <button id="exportTraceBtn" class="btn">
+        <span>&#128190;</span> Export Trace
+      </button>
+
+      <button id="importTraceBtn" class="btn">
+        <span>&#128203;</span> Load Sample Trace
+      </button>
+    </div>
+  </header>
+
+  <!-- ====================================================
+       MAIN TWO-COLUMN WORKSPACE
+       ==================================================== -->
+  <div class="app-body">
+
+    <!-- LEFT COLUMN: Pipeline DAG / Sequence Card List -->
+    <aside class="pipeline-pane">
+      <div class="pane-header">
+        <div class="pane-title">
+          <span>Pipeline Sequence</span>
+          <span id="pipelineTotalMetrics" style="font-family: var(--font-mono); font-size: 0.72rem; color: #38bdf8;">0ms &bull; 0 toks</span>
+        </div>
+        <p id="pipelineDesc" class="pipeline-summary">
+          Retrieves knowledge chunks, formats system context, queries the LLM, and verifies citations.
+        </p>
+
+        <!-- Live Global Input -->
+        <div class="input-box-group">
+          <label for="pipelineInput">User Test Query / Input:</label>
+          <input type="text" id="pipelineInput" value="What is the refund policy for digital subscriptions?">
+        </div>
+      </div>
+
+      <!-- Step Cards Render Container -->
+      <div id="stepList" class="step-list">
+        <!-- Rendered dynamically by JavaScript -->
+      </div>
+    </aside>
+
+    <!-- RIGHT COLUMN: Step Inspector & Live Sandbox -->
+    <main class="inspector-pane">
+      <!-- Inspector Header -->
+      <div class="inspector-header">
+        <div class="inspector-title-group">
+          <h2 id="inspectorStepName">
+            <span>Step Inspector</span>
+            <span id="inspectorStepStatus" class="badge badge-idle">Ready</span>
+          </h2>
+          <p id="inspectorStepDesc">Select a step from the left to inspect its inputs, prompts, outputs, and parameters.</p>
+        </div>
+
+        <div style="display: flex; gap: 0.5rem;">
+          <button id="rerunStepBtn" class="btn btn-primary btn-sm">
+            <span>&#8635;</span> Re-run This Step Only
+          </button>
+        </div>
+      </div>
+
+      <!-- Inspector Tab Navigation -->
+      <div class="tab-bar">
+        <div class="tab-item active" data-tab="tab-overview">Output &amp; Metrics</div>
+        <div class="tab-item" data-tab="tab-prompts">Prompt &amp; Variables</div>
+        <div class="tab-item" data-tab="tab-overrides">Parameter Overrides</div>
+        <div class="tab-item" data-tab="tab-comparison">Run Comparison</div>
+        <div class="tab-item" data-tab="tab-raw">Raw JSON Trace</div>
+      </div>
+
+      <!-- Tab 1: Output & Metrics -->
+      <div id="tab-overview" class="inspector-content">
+        <!-- Error or Warning Alert Box -->
+        <div id="inspectorAlert" class="alert-banner alert-danger" style="display: none;">
+          <strong>Error:</strong> <span id="alertMessageText">Step validation failed.</span>
+        </div>
+
+        <!-- Metrics Summary Cards -->
+        <div class="metrics-summary-bar">
+          <div class="metric-stat">
+            <span class="metric-label">Latency</span>
+            <span id="metricLatency" class="metric-value">0 ms</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Prompt Tokens</span>
+            <span id="metricPromptTokens" class="metric-value">0</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Output Tokens</span>
+            <span id="metricOutputTokens" class="metric-value">0</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Total Cost (Est)</span>
+            <span id="metricCost" class="metric-value">$0.0000</span>
+          </div>
+        </div>
+
+        <!-- Raw Step Output Display -->
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>STEP OUTPUT / GENERATED RESULT</span>
+            <button id="copyOutputBtn" class="btn btn-sm" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;">Copy</button>
+          </div>
+          <pre id="stepRawOutput" class="code-panel-body">// Run the pipeline or step to see output here...</pre>
+        </div>
+
+        <!-- Step Inputs Display -->
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>STEP INPUT VARIABLES (RESOLVED)</span>
+          </div>
+          <pre id="stepResolvedInputs" class="code-panel-body">// Inputs passed into this stage...</pre>
+        </div>
+      </div>
+
+      <!-- Tab 2: Prompt & Variables Sandbox -->
+      <div id="tab-prompts" class="inspector-content" style="display: none;">
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Edit the prompt template or system instructions below. You can use <code>{{variable_name}}</code> tags.
+        </p>
+
+        <div class="field-group">
+          <label for="stepSystemPrompt">
+            <span>System Prompt Template</span>
+            <span class="sub-label">Guides role &amp; constraints</span>
+          </label>
+          <textarea id="stepSystemPrompt" rows="4"></textarea>
+        </div>
+
+        <div class="field-group">
+          <label for="stepUserPrompt">
+            <span>User Prompt Template</span>
+            <span class="sub-label">Includes interpolated variables</span>
+          </label>
+          <textarea id="stepUserPrompt" rows="5"></textarea>
+        </div>
+
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>ASSEMBLED PAYLOAD PREVIEW</span>
+          </div>
+          <pre id="stepPayloadPreview" class="code-panel-body">// Payload sent to provider...</pre>
+        </div>
+      </div>
+
+      <!-- Tab 3: Parameter Overrides -->
+      <div id="tab-overrides" class="inspector-content" style="display: none;">
+        <div class="params-grid">
+          <div class="field-group">
+            <label for="paramModel">Model ID:</label>
+            <select id="paramModel">
+              <option value="gpt-4o">gpt-4o (Standard)</option>
+              <option value="gpt-4o-mini">gpt-4o-mini (Fast / Lightweight)</option>
+              <option value="claude-3-5-sonnet">claude-3-5-sonnet (High Reasoning)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro (Long Context)</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label for="paramTemperature">
+              <span>Temperature: <strong id="tempDisplay">0.2</strong></span>
+            </label>
+            <input type="range" id="paramTemperature" min="0" max="1" step="0.05" value="0.2">
+          </div>
+        </div>
+
+        <div class="params-grid">
+          <div class="field-group">
+            <label for="paramMaxTokens">Max Completion Tokens:</label>
+            <input type="number" id="paramMaxTokens" value="1024" step="64">
+          </div>
+
+          <div class="field-group">
+            <label for="paramTopP">Top P:</label>
+            <input type="number" id="paramTopP" value="0.95" step="0.05" min="0.1" max="1.0">
+          </div>
+        </div>
+
+        <div class="field-group">
+          <label for="stepCustomVariables">Step Injected Variables (JSON):</label>
+          <textarea id="stepCustomVariables" rows="4" style="font-family: var(--font-mono);"></textarea>
+        </div>
+      </div>
+
+      <!-- Tab 4: Side-by-Side Comparison -->
+      <div id="tab-comparison" class="inspector-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1rem;">Run History Comparison</h3>
+          <button id="saveAsBaselineBtn" class="btn btn-sm">Set Current Run as Baseline (Run A)</button>
+        </div>
+
+        <div class="compare-container">
+          <div class="compare-grid">
+            <!-- Run A (Baseline) -->
+            <div class="compare-col">
+              <div class="compare-header">
+                <span>Run A (Baseline)</span>
+                <span id="compareRunATitle" style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; float: right;">Not saved</span>
+              </div>
+              <div>
+                <span class="metric-label">Latency:</span> <span id="compareLatA" style="font-family: var(--font-mono);">-</span> |
+                <span class="metric-label">Tokens:</span> <span id="compareTokA" style="font-family: var(--font-mono);">-</span>
+              </div>
+              <div class="code-panel">
+                <div class="code-panel-header">OUTPUT</div>
+                <pre id="compareOutputA" class="code-panel-body">// Baseline output will appear here...</pre>
+              </div>
+            </div>
+
+            <!-- Run B (Current Run) -->
+            <div class="compare-col">
+              <div class="compare-header">
+                <span>Run B (Current Run)</span>
+                <span id="compareRunBTitle" style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal; float: right;">Active</span>
+              </div>
+              <div>
+                <span class="metric-label">Latency:</span> <span id="compareLatB" style="font-family: var(--font-mono);">-</span> |
+                <span class="metric-label">Tokens:</span> <span id="compareTokB" style="font-family: var(--font-mono);">-</span>
+              </div>
+              <div class="code-panel">
+                <div class="code-panel-header">OUTPUT</div>
+                <pre id="compareOutputB" class="code-panel-body">// Current run output...</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 5: Raw JSON Trace -->
+      <div id="tab-raw" class="inspector-content" style="display: none;">
+        <div class="code-panel" style="flex: 1;">
+          <div class="code-panel-header">
+            <span>COMPLETE PIPELINE TRACE (JSON)</span>
+            <button id="copyTraceBtn" class="btn btn-sm" style="padding: 0.15rem 0.4rem; font-size: 0.7rem;">Copy JSON</button>
+          </div>
+          <pre id="rawTraceOutput" class="code-panel-body">// JSON trace will update after pipeline runs...</pre>
+        </div>
+      </div>
+
     </main>
   </div>
 
+  <!-- ====================================================
+       SCRIPTS: APPLICATION LOGIC
+       ==================================================== -->
   <script>
-    // WHAT THIS DOES: Finds the HTML elements on the page so we can interact with them using code.
-    const testButton = document.getElementById('testBtn');
-    const statusDisplay = document.getElementById('statusMessage');
+    // WHAT THIS DOES: Stores the sample pipeline definitions, steps, templates, and mock data for RAG and Structured Extraction workflows.
+    const PIPELINE_PRESETS = {
+      rag: {
+        id: "rag",
+        name: "RAG Q&A Pipeline",
+        description: "Retrieves knowledge chunks, formats system context, queries the LLM, and verifies citations.",
+        defaultInput: "What is the refund policy for digital subscriptions?",
+        steps: [
+          {
+            id: "step_query_rewriter",
+            name: "Query Preprocessing & Intent",
+            type: "preprocessor",
+            systemPrompt: "You are an intent classifier and query normalizer. Extract core search keywords and user intent.",
+            userPrompt: "Normalize and extract query keywords for: {{user_input}}",
+            model: "gpt-4o-mini",
+            temperature: 0.0,
+            variables: { intent: "policy_lookup", domain: "billing" },
+            mockOutput: JSON.stringify({
+              normalized_query: "digital subscription refund cancellation policy terms",
+              intent: "refund_inquiry",
+              language: "en"
+            }, null, 2),
+            latency: 120,
+            promptTokens: 45,
+            outputTokens: 38,
+            status: "idle"
+          },
+          {
+            id: "step_retrieval",
+            name: "Vector Retrieval & Ranking",
+            type: "retriever",
+            systemPrompt: "Vector database index: billing_kb_v2. Metric: Cosine similarity.",
+            userPrompt: "Query: {{normalized_query}} | Top-K: 2",
+            model: "embedding-text-004",
+            temperature: 0.0,
+            variables: { top_k: 2, similarity_threshold: 0.78 },
+            mockOutput: JSON.stringify({
+              retrieved_documents: [
+                {
+                  id: "doc_102",
+                  title: "Subscription Refund Terms",
+                  content: "Customers may request a full refund within 14 days of initial digital subscription purchase if usage is under 2 hours.",
+                  score: 0.92
+                },
+                {
+                  id: "doc_108",
+                  title: "Renewal Grace Period",
+                  content: "Recurring annual renewals have a 48-hour grace period for automated cancellation and refund.",
+                  score: 0.85
+                }
+              ]
+            }, null, 2),
+            latency: 210,
+            promptTokens: 62,
+            outputTokens: 110,
+            status: "idle"
+          },
+          {
+            id: "step_prompt_assembly",
+            name: "Prompt Assembly & Context Injection",
+            type: "assembler",
+            systemPrompt: "You are an assistant. Answer user queries strictly using the provided context chunks. Include chunk citation IDs.",
+            userPrompt: "Context:\n{{retrieved_context}}\n\nUser Question: {{user_input}}",
+            model: "template-compiler",
+            temperature: 0.0,
+            variables: { context_format: "markdown_bullets" },
+            mockOutput: "Context chunks formatted and injected into prompt buffer. Total context tokens: 172. User query appended.",
+            latency: 45,
+            promptTokens: 180,
+            outputTokens: 180,
+            status: "idle"
+          },
+          {
+            id: "step_model_inference",
+            name: "Model Inference (Generation)",
+            type: "llm_inference",
+            systemPrompt: "Answer concisely and cite source documents like [doc_102].",
+            userPrompt: "What is the refund policy for digital subscriptions?",
+            model: "gpt-4o",
+            temperature: 0.2,
+            variables: { stream: true },
+            mockOutput: "You can receive a full refund for a digital subscription if requested within 14 days of purchase, provided your total usage is under 2 hours [doc_102]. Additionally, for annual renewals, a 48-hour cancellation grace period applies [doc_108].",
+            latency: 580,
+            promptTokens: 240,
+            outputTokens: 52,
+            status: "idle"
+          },
+          {
+            id: "step_citation_verifier",
+            name: "Citation & Safety Guardrails",
+            type: "postprocessor",
+            systemPrompt: "Verify that citations [doc_xxx] in the answer exist in the retrieved context. Check for hallucinations.",
+            userPrompt: "Verify answer against context chunks.",
+            model: "guardrail-v1",
+            temperature: 0.0,
+            variables: { hallucination_threshold: 0.05 },
+            mockOutput: JSON.stringify({
+              passed: true,
+              verified_citations: ["doc_102", "doc_108"],
+              hallucination_score: 0.01,
+              toxicity: 0.0
+            }, null, 2),
+            latency: 95,
+            promptTokens: 120,
+            outputTokens: 44,
+            status: "idle"
+          }
+        ]
+      },
 
-    // WHAT THIS DOES: Listens for a click on the test button and updates the page text to verify that JavaScript is running properly.
-    testButton.addEventListener('click', function() {
-      statusDisplay.textContent = 'Setup verified! Ready to build the next stage of the pipeline.';
+      extraction: {
+        id: "extraction",
+        name: "Structured Extraction Pipeline",
+        description: "Transforms unstructured invoices and order emails into validated JSON records with schema checking.",
+        defaultInput: "Order #8832 from Acme Corp on Nov 20, 2026. Total was $349.50 paid via Visa 4412. Items: 2x Cloud Server Pro.",
+        steps: [
+          {
+            id: "step_extract_clean",
+            name: "Text Ingestion & Token Counter",
+            type: "preprocessor",
+            systemPrompt: "Clean raw text, remove HTML tags and sanitize PII.",
+            userPrompt: "Clean text: {{raw_document}}",
+            model: "sanitizer-v1",
+            temperature: 0.0,
+            variables: { mask_credit_card: true },
+            mockOutput: "Order #8832 from Acme Corp on Nov 20, 2026. Total was $349.50 paid via Visa ****4412. Items: 2x Cloud Server Pro.",
+            latency: 35,
+            promptTokens: 38,
+            outputTokens: 38,
+            status: "idle"
+          },
+          {
+            id: "step_extract_prompt",
+            name: "Schema Injection & Prompt Build",
+            type: "assembler",
+            systemPrompt: "You are a data extraction engine. Output strictly adhering to the Invoice JSON Schema.",
+            userPrompt: "Extract schema fields: order_id, vendor, total, currency, payment_method, line_items",
+            model: "template-compiler",
+            temperature: 0.0,
+            variables: { schema_version: "2.1.0" },
+            mockOutput: "Injected target JSON schema: { order_id: string, vendor: string, total: number, currency: string, items: array }",
+            latency: 30,
+            promptTokens: 95,
+            outputTokens: 95,
+            status: "idle"
+          },
+          {
+            id: "step_extract_llm",
+            name: "LLM Structured Generation",
+            type: "llm_inference",
+            systemPrompt: "Extract accurate entities into JSON. No surrounding conversational filler.",
+            userPrompt: "Input text: Order #8832 from Acme Corp...",
+            model: "gpt-4o",
+            temperature: 0.1,
+            variables: { response_format: "json_object" },
+            mockOutput: JSON.stringify({
+              order_id: "8832",
+              vendor: "Acme Corp",
+              date: "2026-11-20",
+              total: 349.50,
+              currency: "USD",
+              payment_method: "Visa ****4412",
+              items: [
+                { name: "Cloud Server Pro", quantity: 2, unit_price: 174.75 }
+              ]
+            }, null, 2),
+            latency: 480,
+            promptTokens: 160,
+            outputTokens: 85,
+            status: "idle"
+          },
+          {
+            id: "step_extract_validate",
+            name: "JSON Schema Validator",
+            type: "validator",
+            systemPrompt: "Validate JSON syntax and type constraints.",
+            userPrompt: "Validate extracted payload against Invoice Schema v2.1",
+            model: "json-schema-eval",
+            temperature: 0.0,
+            variables: { strict_types: true },
+            mockOutput: JSON.stringify({
+              schema_valid: true,
+              errors: [],
+              fields_detected: 7
+            }, null, 2),
+            latency: 40,
+            promptTokens: 90,
+            outputTokens: 25,
+            status: "idle"
+          }
+        ]
+      }
+    };
+
+    // WHAT THIS DOES: Holds the state of the active pipeline, currently selected step index, error simulation flag, and run comparison history.
+    const appState = {
+      currentPipelineId: "rag",
+      activeSteps: [],
+      selectedStepIndex: 0,
+      simulateError: false,
+      isRunning: false,
+      baselineRun: null, // Run A
+      currentRun: null   // Run B
+    };
+
+    // WHAT THIS DOES: References all HTML elements needed for reading user inputs and updating the UI.
+    const UI = {
+      pipelineSelect: document.getElementById('pipelineSelect'),
+      pipelineDesc: document.getElementById('pipelineDesc'),
+      pipelineInput: document.getElementById('pipelineInput'),
+      pipelineTotalMetrics: document.getElementById('pipelineTotalMetrics'),
+      stepList: document.getElementById('stepList'),
+      runPipelineBtn: document.getElementById('runPipelineBtn'),
+      rerunStepBtn: document.getElementById('rerunStepBtn'),
+      toggleErrorBtn: document.getElementById('toggleErrorBtn'),
+      errorToggleLabel: document.getElementById('errorToggleLabel'),
+      exportTraceBtn: document.getElementById('exportTraceBtn'),
+      importTraceBtn: document.getElementById('importTraceBtn'),
+      copyOutputBtn: document.getElementById('copyOutputBtn'),
+      copyTraceBtn: document.getElementById('copyTraceBtn'),
+      saveAsBaselineBtn: document.getElementById('saveAsBaselineBtn'),
+
+      // Inspector DOM elements
+      inspectorStepName: document.getElementById('inspectorStepName'),
+      inspectorStepStatus: document.getElementById('inspectorStepStatus'),
+      inspectorStepDesc: document.getElementById('inspectorStepDesc'),
+      inspectorAlert: document.getElementById('inspectorAlert'),
+      alertMessageText: document.getElementById('alertMessageText'),
+      metricLatency: document.getElementById('metricLatency'),
+      metricPromptTokens: document.getElementById('metricPromptTokens'),
+      metricOutputTokens: document.getElementById('metricOutputTokens'),
+      metricCost: document.getElementById('metricCost'),
+      stepRawOutput: document.getElementById('stepRawOutput'),
+      stepResolvedInputs: document.getElementById('stepResolvedInputs'),
+
+      // Tab Prompts DOM
+      stepSystemPrompt: document.getElementById('stepSystemPrompt'),
+      stepUserPrompt: document.getElementById('stepUserPrompt'),
+      stepPayloadPreview: document.getElementById('stepPayloadPreview'),
+
+      // Tab Overrides DOM
+      paramModel: document.getElementById('paramModel'),
+      paramTemperature: document.getElementById('paramTemperature'),
+      tempDisplay: document.getElementById('tempDisplay'),
+      paramMaxTokens: document.getElementById('paramMaxTokens'),
+      paramTopP: document.getElementById('paramTopP'),
+      stepCustomVariables: document.getElementById('stepCustomVariables'),
+
+      // Tab Comparison DOM
+      compareRunATitle: document.getElementById('compareRunATitle'),
+      compareLatA: document.getElementById('compareLatA'),
+      compareTokA: document.getElementById('compareTokA'),
+      compareOutputA: document.getElementById('compareOutputA'),
+      compareRunBTitle: document.getElementById('compareRunBTitle'),
+      compareLatB: document.getElementById('compareLatB'),
+      compareTokB: document.getElementById('compareTokB'),
+      compareOutputB: document.getElementById('compareOutputB'),
+
+      // Tab Raw DOM
+      rawTraceOutput: document.getElementById('rawTraceOutput'),
+      tabs: document.querySelectorAll('.tab-item')
+    };
+
+    // WHAT THIS DOES: Clones the preset steps into our active state so user modifications don't overwrite the original templates.
+    function loadPipeline(pipelineKey) {
+      const preset = PIPELINE_PRESETS[pipelineKey];
+      appState.currentPipelineId = pipelineKey;
+      appState.activeSteps = JSON.parse(JSON.stringify(preset.steps));
+      appState.selectedStepIndex = 0;
+
+      UI.pipelineDesc.textContent = preset.description;
+      UI.pipelineInput.value = preset.defaultInput;
+      UI.pipelineTotalMetrics.textContent = "0ms • 0 toks";
+
+      renderStepList();
+      selectStep(0);
+      updateRawTraceView();
+    }
+
+    // WHAT THIS DOES: Renders the pipeline steps as sequential cards with status indicators, latency, and token metrics.
+    function renderStepList() {
+      UI.stepList.innerHTML = "";
+
+      appState.activeSteps.forEach((step, index) => {
+        const card = document.createElement('div');
+        card.className = `step-card status-${step.status || 'idle'} ${index === appState.selectedStepIndex ? 'active' : ''}`;
+        card.onclick = () => selectStep(index);
+
+        let statusBadge = `<span class="badge badge-${step.status || 'idle'}">${step.status || 'READY'}</span>`;
+
+        card.innerHTML = `
+          <div class="step-top">
+            <span class="step-badge-num">STEP ${index + 1}</span>
+            ${statusBadge}
+          </div>
+          <div class="step-name">${step.name}</div>
+          <div class="step-type">${step.type.toUpperCase()} &bull; ${step.model || 'rule-based'}</div>
+          <div class="step-metrics">
+            <span class="metric-pill">&#9201; ${step.latency || 0} ms</span>
+            <span class="metric-pill">&#128290; ${(step.promptTokens || 0) + (step.outputTokens || 0)} toks</span>
+          </div>
+        `;
+
+        UI.stepList.appendChild(card);
+
+        // Add visual down arrow between steps
+        if (index < appState.activeSteps.length - 1) {
+          const connector = document.createElement('div');
+          connector.className = 'step-connector';
+          connector.innerHTML = '&darr;';
+          UI.stepList.appendChild(connector);
+        }
+      });
+    }
+
+    // WHAT THIS DOES: Switches the inspector view to the clicked step and populates all tabs with its current values.
+    function selectStep(index) {
+      appState.selectedStepIndex = index;
+      const step = appState.activeSteps[index];
+      if (!step) return;
+
+      // Update active highlight on step list
+      const cards = UI.stepList.querySelectorAll('.step-card');
+      cards.forEach((c, i) => {
+        c.classList.toggle('active', i === index);
+      });
+
+      // Update Inspector Header
+      UI.inspectorStepName.innerHTML = `<span>${step.name}</span> <span class="badge badge-${step.status || 'idle'}">${step.status || 'READY'}</span>`;
+      UI.inspectorStepDesc.textContent = `Type: ${step.type} | ID: ${step.id} | Associated Model: ${step.model || 'internal'}`;
+
+      // Check for errors / alerts
+      if (step.status === 'error') {
+        UI.inspectorAlert.style.display = 'flex';
+        UI.alertMessageText.textContent = step.errorMessage || "Validation failed or empty response returned in this stage.";
+      } else {
+        UI.inspectorAlert.style.display = 'none';
+      }
+
+      // Update Metrics Tab
+      UI.metricLatency.textContent = `${step.latency || 0} ms`;
+      UI.metricPromptTokens.textContent = step.promptTokens || 0;
+      UI.metricOutputTokens.textContent = step.outputTokens || 0;
+      const totalTokens = (step.promptTokens || 0) + (step.outputTokens || 0);
+      // Rough estimation: $0.005 per 1k tokens
+      const estimatedCost = (totalTokens * 0.000005).toFixed(4);
+      UI.metricCost.textContent = `$${estimatedCost}`;
+
+      // Raw output and inputs
+      UI.stepRawOutput.textContent = step.mockOutput || "// No output recorded yet. Run pipeline to inspect.";
+      const inputSnapshot = {
+        global_user_query: UI.pipelineInput.value,
+        injected_variables: step.variables || {},
+        prior_step_output: index > 0 ? appState.activeSteps[index - 1].mockOutput : null
+      };
+      UI.stepResolvedInputs.textContent = JSON.stringify(inputSnapshot, null, 2);
+
+      // Populate Prompts Tab
+      UI.stepSystemPrompt.value = step.systemPrompt || "";
+      UI.stepUserPrompt.value = step.userPrompt || "";
+      updatePayloadPreview(step);
+
+      // Populate Overrides Tab
+      if (step.model) UI.paramModel.value = step.model;
+      UI.paramTemperature.value = step.temperature !== undefined ? step.temperature : 0.2;
+      UI.tempDisplay.textContent = UI.paramTemperature.value;
+      UI.stepCustomVariables.value = JSON.stringify(step.variables || {}, null, 2);
+    }
+
+    // WHAT THIS DOES: Replaces template placeholders like {{user_input}} in the prompt and displays the combined payload preview.
+    function updatePayloadPreview(step) {
+      const userInput = UI.pipelineInput.value;
+      let assembledUserPrompt = (step.userPrompt || "")
+        .replace(/\{\{user_input\}\}/g, userInput)
+        .replace(/\{\{normalized_query\}\}/g, userInput)
+        .replace(/\{\{raw_document\}\}/g, userInput);
+
+      const payload = {
+        model: step.model || UI.paramModel.value,
+        temperature: parseFloat(UI.paramTemperature.value) || 0.2,
+        messages: [
+          { role: "system", content: step.systemPrompt || "" },
+          { role: "user", content: assembledUserPrompt }
+        ]
+      };
+
+      UI.stepPayloadPreview.textContent = JSON.stringify(payload, null, 2);
+    }
+
+    // WHAT THIS DOES: Simulates executing an individual step with realistic latency delays, token counting, and possible error injection.
+    async function executeStep(stepIndex) {
+      const step = appState.activeSteps[stepIndex];
+      step.status = "running";
+      renderStepList();
+      selectStep(stepIndex);
+
+      // Save user prompt edits from inspector back to step
+      step.systemPrompt = UI.stepSystemPrompt.value;
+      step.userPrompt = UI.stepUserPrompt.value;
+      try {
+        step.variables = JSON.parse(UI.stepCustomVariables.value);
+      } catch (e) {
+        // keep old variables if invalid JSON
+      }
+
+      // Realistic mock delay (200ms - 500ms)
+      const simulatedDelay = Math.max(150, Math.floor(Math.random() * 250) + 180);
+      await new Promise(r => setTimeout(r, simulatedDelay));
+
+      // Error Simulation Trigger: if simulate error is on, fail on the 2nd or 3rd step
+      if (appState.simulateError && (stepIndex === 1 || stepIndex === 2)) {
+        step.status = "error";
+        step.errorMessage = stepIndex === 1
+          ? "Empty Retrieval Error: Vector database returned 0 matching chunks (similarity threshold > 0.95)."
+          : "JSON Schema Validation Error: Required field 'order_id' is missing from generated LLM payload.";
+        step.latency = simulatedDelay;
+        step.outputTokens = 0;
+        renderStepList();
+        selectStep(stepIndex);
+        throw new Error(step.errorMessage);
+      }
+
+      // Normal Successful Execution
+      step.status = "success";
+      step.latency = simulatedDelay;
+      step.promptTokens = Math.floor(step.userPrompt.length / 4) + 20;
+      step.outputTokens = Math.floor((step.mockOutput || "").length / 4) + 15;
+
+      renderStepList();
+      selectStep(stepIndex);
+    }
+
+    // WHAT THIS DOES: Runs each step in sequence from first to last, calculates total pipeline metrics, and records a run in history.
+    async function runFullPipeline() {
+      if (appState.isRunning) return;
+      appState.isRunning = true;
+      UI.runPipelineBtn.disabled = true;
+      UI.runPipelineBtn.innerHTML = "<span>&#8987;</span> Running...";
+
+      // Reset all steps to idle
+      appState.activeSteps.forEach(s => {
+        s.status = "idle";
+        delete s.errorMessage;
+      });
+      renderStepList();
+
+      let totalLatency = 0;
+      let totalTokens = 0;
+      let hasFailed = false;
+
+      for (let i = 0; i < appState.activeSteps.length; i++) {
+        try {
+          await executeStep(i);
+          totalLatency += appState.activeSteps[i].latency;
+          totalTokens += (appState.activeSteps[i].promptTokens + appState.activeSteps[i].outputTokens);
+        } catch (err) {
+          hasFailed = true;
+          totalLatency += appState.activeSteps[i].latency;
+          break; // stop sequence on error
+        }
+      }
+
+      // Update total metrics display
+      UI.pipelineTotalMetrics.textContent = `${totalLatency}ms • ${totalTokens} toks`;
+
+      // Record this run as Run B for side-by-side comparison
+      const lastStep = appState.activeSteps[appState.activeSteps.length - 1];
+      appState.currentRun = {
+        timestamp: new Date().toLocaleTimeString(),
+        totalLatency: totalLatency,
+        totalTokens: totalTokens,
+        finalOutput: hasFailed ? "Pipeline failed at intermediate step." : lastStep.mockOutput
+      };
+      updateComparisonView();
+      updateRawTraceView();
+
+      appState.isRunning = false;
+      UI.runPipelineBtn.disabled = false;
+      UI.runPipelineBtn.innerHTML = "<span>&#9654;</span> Run Full Pipeline";
+    }
+
+    // WHAT THIS DOES: Updates the side-by-side comparison tab between Baseline Run (Run A) and Current Run (Run B).
+    function updateComparisonView() {
+      if (appState.baselineRun) {
+        UI.compareRunATitle.textContent = `Saved at ${appState.baselineRun.timestamp}`;
+        UI.compareLatA.textContent = `${appState.baselineRun.totalLatency} ms`;
+        UI.compareTokA.textContent = `${appState.baselineRun.totalTokens} tokens`;
+        UI.compareOutputA.textContent = appState.baselineRun.finalOutput;
+      }
+
+      if (appState.currentRun) {
+        UI.compareRunBTitle.textContent = `Completed at ${appState.currentRun.timestamp}`;
+        UI.compareLatB.textContent = `${appState.currentRun.totalLatency} ms`;
+        UI.compareTokB.textContent = `${appState.currentRun.totalTokens} tokens`;
+        UI.compareOutputB.textContent = appState.currentRun.finalOutput;
+      }
+    }
+
+    // WHAT THIS DOES: Generates and updates the raw execution trace JSON display.
+    function updateRawTraceView() {
+      const trace = {
+        pipeline_id: appState.currentPipelineId,
+        user_input: UI.pipelineInput.value,
+        timestamp: new Date().toISOString(),
+        steps: appState.activeSteps.map(s => ({
+          id: s.id,
+          name: s.name,
+          type: s.type,
+          status: s.status,
+          latency_ms: s.latency,
+          prompt_tokens: s.promptTokens,
+          output_tokens: s.outputTokens,
+          parameters: {
+            model: s.model,
+            temperature: s.temperature
+          },
+          output: s.mockOutput,
+          error: s.errorMessage || null
+        }))
+      };
+
+      UI.rawTraceOutput.textContent = JSON.stringify(trace, null, 2);
+    }
+
+    // WHAT THIS DOES: Exports the current pipeline trace as a downloadable JSON file.
+    function exportTraceJSON() {
+      const traceText = UI.rawTraceOutput.textContent;
+      const blob = new Blob([traceText], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `llm_pipeline_trace_${appState.currentPipelineId}_${Date.now()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // WHAT THIS DOES: Loads a sample pre-recorded trace into the explorer to demonstrate trace debugging.
+    function loadSampleTrace() {
+      alert("Sample pre-recorded trace loaded! You can inspect the historical inputs, latencies, and outputs in the tabs.");
+      runFullPipeline();
+    }
+
+    // WHAT THIS DOES: Sets up event listeners for user clicks, tab switching, and input modifications.
+    function setupEventListeners() {
+      // Pipeline dropdown selection change
+      UI.pipelineSelect.addEventListener('change', (e) => {
+        loadPipeline(e.target.value);
+      });
+
+      // Run full pipeline button
+      UI.runPipelineBtn.addEventListener('click', runFullPipeline);
+
+      // Re-run single step button
+      UI.rerunStepBtn.addEventListener('click', () => {
+        executeStep(appState.selectedStepIndex);
+      });
+
+      // Toggle simulate error button
+      UI.toggleErrorBtn.addEventListener('click', () => {
+        appState.simulateError = !appState.simulateError;
+        if (appState.simulateError) {
+          UI.toggleErrorBtn.classList.add('btn-danger');
+          UI.errorToggleLabel.textContent = "Simulate Error: ON";
+        } else {
+          UI.toggleErrorBtn.classList.remove('btn-danger');
+          UI.errorToggleLabel.textContent = "Simulate Error: OFF";
+        }
+      });
+
+      // Export & Import Trace buttons
+      UI.exportTraceBtn.addEventListener('click', exportTraceJSON);
+      UI.importTraceBtn.addEventListener('click', loadSampleTrace);
+
+      // Copy buttons
+      UI.copyOutputBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(UI.stepRawOutput.textContent);
+        UI.copyOutputBtn.textContent = "Copied!";
+        setTimeout(() => UI.copyOutputBtn.textContent = "Copy", 1500);
+      });
+
+      UI.copyTraceBtn.addEventListener('click', () => {
+        navigator.clipboard.writeText(UI.rawTraceOutput.textContent);
+        UI.copyTraceBtn.textContent = "Copied!";
+        setTimeout(() => UI.copyTraceBtn.textContent = "Copy JSON", 1500);
+      });
+
+      // Set current run as baseline for comparison
+      UI.saveAsBaselineBtn.addEventListener('click', () => {
+        if (!appState.currentRun) {
+          alert("Please run the pipeline first to create a run.");
+          return;
+        }
+        appState.baselineRun = JSON.parse(JSON.stringify(appState.currentRun));
+        updateComparisonView();
+        alert("Current run saved as Baseline (Run A)!");
+      });
+
+      // Temperature slider display sync
+      UI.paramTemperature.addEventListener('input', (e) => {
+        UI.tempDisplay.textContent = e.target.value;
+        const currentStep = appState.activeSteps[appState.selectedStepIndex];
+        if (currentStep) {
+          currentStep.temperature = parseFloat(e.target.value);
+          updatePayloadPreview(currentStep);
+        }
+      });
+
+      // System & User prompt editing sync
+      UI.stepSystemPrompt.addEventListener('input', () => {
+        const currentStep = appState.activeSteps[appState.selectedStepIndex];
+        if (currentStep) {
+          currentStep.systemPrompt = UI.stepSystemPrompt.value;
+          updatePayloadPreview(currentStep);
+        }
+      });
+
+      UI.stepUserPrompt.addEventListener('input', () => {
+        const currentStep = appState.activeSteps[appState.selectedStepIndex];
+        if (currentStep) {
+          currentStep.userPrompt = UI.stepUserPrompt.value;
+          updatePayloadPreview(currentStep);
+        }
+      });
+
+      // Global input query sync
+      UI.pipelineInput.addEventListener('input', () => {
+        const currentStep = appState.activeSteps[appState.selectedStepIndex];
+        if (currentStep) updatePayloadPreview(currentStep);
+      });
+
+      // Tab switching logic
+      UI.tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          UI.tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          const targetId = tab.getAttribute('data-tab');
+          document.querySelectorAll('.inspector-content').forEach(content => {
+            content.style.display = content.id === targetId ? 'flex' : 'none';
+          });
+        });
+      });
+    }
+
+    // WHAT THIS DOES: Initializes the application when the page finishes loading by attaching listeners and loading the RAG preset.
+    window.addEventListener('DOMContentLoaded', () => {
+      setupEventListeners();
+      loadPipeline("rag");
     });
   </script>
 </body>

@@ -375,7 +375,8 @@
       background-color: #0f172a;
       border-bottom: 1px solid var(--card-border);
       padding: 0 1.5rem;
-      gap: 1.5rem;
+      gap: 1.25rem;
+      overflow-x: auto;
     }
 
     .tab-item {
@@ -387,6 +388,7 @@
       border-bottom: 2px solid transparent;
       transition: all 0.15s ease;
       user-select: none;
+      white-space: nowrap;
     }
 
     .tab-item:hover {
@@ -581,6 +583,95 @@
       color: #fde68a;
     }
 
+    /* ----------------------------------------------------
+       TOKEN CONVERTER & VISUALIZER STYLES
+       ---------------------------------------------------- */
+    .token-viz-container {
+      background-color: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 8px;
+      padding: 1rem;
+      min-height: 110px;
+      max-height: 260px;
+      overflow-y: auto;
+      line-height: 2.2;
+      font-family: var(--font-mono);
+      font-size: 0.86rem;
+    }
+
+    .token-chip {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      margin: 0.1rem 0.18rem;
+      border-radius: 4px;
+      font-weight: 500;
+      color: #ffffff;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      cursor: default;
+      position: relative;
+      transition: transform 0.1s ease, filter 0.1s ease;
+      white-space: pre;
+    }
+
+    .token-chip:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.25);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+      z-index: 10;
+    }
+
+    .token-space-dot {
+      color: rgba(255, 255, 255, 0.45);
+      font-weight: bold;
+    }
+
+    .token-quick-btns {
+      display: flex;
+      gap: 0.4rem;
+      margin-top: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .model-cost-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-top: 0.5rem;
+    }
+
+    .model-cost-table th, .model-cost-table td {
+      padding: 0.55rem 0.75rem;
+      border-bottom: 1px solid var(--card-border);
+      text-align: left;
+    }
+
+    .model-cost-table th {
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      background-color: #111827;
+    }
+
+    .model-cost-table tr:hover {
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .calc-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 0.75rem;
+    }
+
+    .calc-stat-box {
+      background-color: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+    }
+
     /* Scrollbars */
     ::-webkit-scrollbar {
       width: 6px;
@@ -620,6 +711,10 @@
       <!-- Run and Action Controls -->
       <button id="runPipelineBtn" class="btn btn-primary">
         <span>&#9654;</span> Run Full Pipeline
+      </button>
+
+      <button id="openTokenizerBtn" class="btn">
+        <span>&#128291;</span> Token Converter
       </button>
 
       <button id="toggleErrorBtn" class="btn">
@@ -689,6 +784,7 @@
         <div class="tab-item active" data-tab="tab-overview">Output &amp; Metrics</div>
         <div class="tab-item" data-tab="tab-prompts">Prompt &amp; Variables</div>
         <div class="tab-item" data-tab="tab-overrides">Parameter Overrides</div>
+        <div class="tab-item" data-tab="tab-tokens" id="tabTokensNav">&#128291; Token Converter</div>
         <div class="tab-item" data-tab="tab-comparison">Run Comparison</div>
         <div class="tab-item" data-tab="tab-raw">Raw JSON Trace</div>
       </div>
@@ -807,7 +903,107 @@
         </div>
       </div>
 
-      <!-- Tab 4: Side-by-Side Comparison -->
+      <!-- Tab 4: Token Converter & Visualizer -->
+      <div id="tab-tokens" class="inspector-content" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <h3 style="font-size: 1.05rem; font-weight: 600;">Interactive Token Converter &amp; Subword Visualizer</h3>
+          <span style="font-size: 0.75rem; color: var(--text-muted); font-family: var(--font-mono);">BPE Tokenizer Simulator</span>
+        </div>
+
+        <!-- Token Conversion Live Input Box -->
+        <div class="field-group">
+          <label for="tokenInputText">
+            <span>Input Text to Tokenize &amp; Convert:</span>
+            <span class="sub-label">Type or paste text to see subwords, token counts, and cost</span>
+          </label>
+          <textarea id="tokenInputText" rows="3">Large language models process text by converting words into sub-word tokens with unique integer IDs.</textarea>
+          <div class="token-quick-btns">
+            <button id="btnSamplePrompt" class="btn btn-sm">Sample RAG Prompt</button>
+            <button id="btnSampleCode" class="btn btn-sm">Sample JSON Code</button>
+            <button id="btnClearTokenText" class="btn btn-sm">Clear Text</button>
+          </div>
+        </div>
+
+        <!-- Live Conversion Statistics Bar -->
+        <div class="metrics-summary-bar">
+          <div class="metric-stat">
+            <span class="metric-label">Token Count</span>
+            <span id="tokStatTokens" class="metric-value" style="color: #38bdf8;">0</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Word Count</span>
+            <span id="tokStatWords" class="metric-value">0</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Characters</span>
+            <span id="tokStatChars" class="metric-value">0</span>
+          </div>
+          <div class="metric-stat">
+            <span class="metric-label">Chars / Token</span>
+            <span id="tokStatRatio" class="metric-value">~4.0</span>
+          </div>
+        </div>
+
+        <!-- Visual Subword Tokenizer Tiles -->
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>SUBWORD TOKEN BREAKDOWN (COLORED PILLS &bull; HOVER FOR TOKEN ID)</span>
+            <span id="tokChipSummary" style="color: #38bdf8;">0 tokens</span>
+          </div>
+          <div id="tokenVisualizerBox" class="token-viz-container">
+            <!-- Colored token chips will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Multi-Model Cost & Context Window Matrix -->
+        <div class="code-panel">
+          <div class="code-panel-header">
+            <span>MODEL PRICING &amp; CONTEXT USAGE CONVERSION</span>
+          </div>
+          <div style="padding: 0.5rem; overflow-x: auto;">
+            <table class="model-cost-table">
+              <thead>
+                <tr>
+                  <th>Model</th>
+                  <th>Input Cost (Prompt)</th>
+                  <th>Output Cost (Est)</th>
+                  <th>Context Window</th>
+                  <th>Usage %</th>
+                </tr>
+              </thead>
+              <tbody id="modelPricingTableBody">
+                <!-- Dynamically populated rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Reverse Token Estimator (Tokens -> Words & Pages) -->
+        <div class="card" style="margin-bottom: 0;">
+          <h4 style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #38bdf8;">Reverse Token Estimator (Tokens &rarr; Text Volume)</h4>
+          <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem;">
+            <label for="reverseTokenInput" style="font-size: 0.8rem; color: var(--text-muted);">Enter Token Target:</label>
+            <input type="number" id="reverseTokenInput" value="4096" step="512" min="1" style="width: 140px;">
+          </div>
+          <div class="calc-card-grid">
+            <div class="calc-stat-box">
+              <span class="metric-label">Estimated Words</span>
+              <span id="revWords" class="metric-value">~3,072 words</span>
+            </div>
+            <div class="calc-stat-box">
+              <span class="metric-label">Book / Doc Pages</span>
+              <span id="revPages" class="metric-value">~6.1 pages</span>
+            </div>
+            <div class="calc-stat-box">
+              <span class="metric-label">Reading Time</span>
+              <span id="revReadTime" class="metric-value">~12.3 mins</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Tab 5: Side-by-Side Comparison -->
       <div id="tab-comparison" class="inspector-content" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <h3 style="font-size: 1rem;">Run History Comparison</h3>
@@ -851,7 +1047,7 @@
         </div>
       </div>
 
-      <!-- Tab 5: Raw JSON Trace -->
+      <!-- Tab 6: Raw JSON Trace -->
       <div id="tab-raw" class="inspector-content" style="display: none;">
         <div class="code-panel" style="flex: 1;">
           <div class="code-panel-header">
@@ -1063,6 +1259,15 @@
       }
     };
 
+    // WHAT THIS DOES: Stores official pricing rates per million tokens and context window limits for leading LLMs.
+    const MODEL_PRICING = [
+      { name: "gpt-4o", inputPerM: 2.50, outputPerM: 10.00, contextWindow: 128000 },
+      { name: "gpt-4o-mini", inputPerM: 0.15, outputPerM: 0.60, contextWindow: 128000 },
+      { name: "claude-3-5-sonnet", inputPerM: 3.00, outputPerM: 15.00, contextWindow: 200000 },
+      { name: "gemini-1.5-flash", inputPerM: 0.075, outputPerM: 0.30, contextWindow: 1000000 },
+      { name: "gemini-1.5-pro", inputPerM: 1.25, outputPerM: 5.00, contextWindow: 2000000 }
+    ];
+
     // WHAT THIS DOES: Holds the state of the active pipeline, currently selected step index, error simulation flag, and run comparison history.
     const appState = {
       currentPipelineId: "rag",
@@ -1074,7 +1279,7 @@
       currentRun: null   // Run B
     };
 
-    // WHAT THIS DOES: References all HTML elements needed for reading user inputs and updating the UI.
+    // WHAT THIS DOES: References all HTML elements needed for reading user inputs, rendering tokens, and updating the UI.
     const UI = {
       pipelineSelect: document.getElementById('pipelineSelect'),
       pipelineDesc: document.getElementById('pipelineDesc'),
@@ -1090,6 +1295,8 @@
       copyOutputBtn: document.getElementById('copyOutputBtn'),
       copyTraceBtn: document.getElementById('copyTraceBtn'),
       saveAsBaselineBtn: document.getElementById('saveAsBaselineBtn'),
+      openTokenizerBtn: document.getElementById('openTokenizerBtn'),
+      tabTokensNav: document.getElementById('tabTokensNav'),
 
       // Inspector DOM elements
       inspectorStepName: document.getElementById('inspectorStepName'),
@@ -1116,6 +1323,23 @@
       paramMaxTokens: document.getElementById('paramMaxTokens'),
       paramTopP: document.getElementById('paramTopP'),
       stepCustomVariables: document.getElementById('stepCustomVariables'),
+
+      // Tab Token Converter DOM
+      tokenInputText: document.getElementById('tokenInputText'),
+      btnSamplePrompt: document.getElementById('btnSamplePrompt'),
+      btnSampleCode: document.getElementById('btnSampleCode'),
+      btnClearTokenText: document.getElementById('btnClearTokenText'),
+      tokStatTokens: document.getElementById('tokStatTokens'),
+      tokStatWords: document.getElementById('tokStatWords'),
+      tokStatChars: document.getElementById('tokStatChars'),
+      tokStatRatio: document.getElementById('tokStatRatio'),
+      tokChipSummary: document.getElementById('tokChipSummary'),
+      tokenVisualizerBox: document.getElementById('tokenVisualizerBox'),
+      modelPricingTableBody: document.getElementById('modelPricingTableBody'),
+      reverseTokenInput: document.getElementById('reverseTokenInput'),
+      revWords: document.getElementById('revWords'),
+      revPages: document.getElementById('revPages'),
+      revReadTime: document.getElementById('revReadTime'),
 
       // Tab Comparison DOM
       compareRunATitle: document.getElementById('compareRunATitle'),
@@ -1411,7 +1635,161 @@
       runFullPipeline();
     }
 
-    // WHAT THIS DOES: Sets up event listeners for user clicks, tab switching, and input modifications.
+    // WHAT THIS DOES: Generates a consistent numerical Token ID for any given text string using a simple hash.
+    function generateTokenId(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = (hash << 5) - hash + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash % 98000) + 1000;
+    }
+
+    // WHAT THIS DOES: Breaks input text into realistic subword and punctuation tokens to simulate Byte Pair Encoding (BPE).
+    function simulateTokenize(text) {
+      if (!text) return [];
+
+      // Regex matching words with leading whitespace, punctuation marks, or standalone symbols
+      const tokenRegex = /(\s+[a-zA-Z0-9]+|[a-zA-Z0-9]+|[^\w\s]|\s+)/g;
+      const matches = text.match(tokenRegex) || [];
+      const tokens = [];
+
+      // Realistic dictionary of common subword splits for technical words
+      const subwordSplits = {
+        "tokenization": ["token", "ization"],
+        "transformers": ["transform", "ers"],
+        "embeddings": ["embed", "dings"],
+        "preprocessing": ["pre", "processing"],
+        "postprocessing": ["post", "processing"],
+        "parameters": ["param", "eters"],
+        "temperature": ["temper", "ature"],
+        "retrieval": ["retrie", "val"],
+        "unstructured": ["un", "structured"],
+        "subscriptions": ["sub", "scriptions"],
+        "inference": ["infer", "ence"]
+      };
+
+      matches.forEach((raw) => {
+        const trimmedLower = raw.trim().toLowerCase();
+        if (subwordSplits[trimmedLower]) {
+          const parts = subwordSplits[trimmedLower];
+          const hasLeadingSpace = raw.startsWith(' ');
+          parts.forEach((part, idx) => {
+            const tokenText = (idx === 0 && hasLeadingSpace) ? ' ' + part : part;
+            tokens.push({
+              text: tokenText,
+              id: generateTokenId(tokenText)
+            });
+          });
+        } else if (raw.length > 8 && /^[a-zA-Z]+$/.test(raw.trim())) {
+          // Break longer unseen words into subwords
+          const clean = raw.trim();
+          const hasLeadingSpace = raw.startsWith(' ');
+          const mid = Math.ceil(clean.length / 2);
+          const part1 = (hasLeadingSpace ? ' ' : '') + clean.slice(0, mid);
+          const part2 = clean.slice(mid);
+          tokens.push({ text: part1, id: generateTokenId(part1) });
+          tokens.push({ text: part2, id: generateTokenId(part2) });
+        } else {
+          tokens.push({
+            text: raw,
+            id: generateTokenId(raw)
+          });
+        }
+      });
+
+      return tokens;
+    }
+
+    // WHAT THIS DOES: Calculates token count, word count, character count, cost estimates, and renders colored token tiles.
+    function updateTokenConversion() {
+      const text = UI.tokenInputText.value;
+      const tokens = simulateTokenize(text);
+      const tokenCount = tokens.length;
+      const charCount = text.length;
+      const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+      const ratio = tokenCount > 0 ? (charCount / tokenCount).toFixed(1) : "0";
+
+      // Update Live Metric Counts
+      UI.tokStatTokens.textContent = tokenCount.toLocaleString();
+      UI.tokStatWords.textContent = wordCount.toLocaleString();
+      UI.tokStatChars.textContent = charCount.toLocaleString();
+      UI.tokStatRatio.textContent = `~${ratio} chars`;
+      UI.tokChipSummary.textContent = `${tokenCount} tokens`;
+
+      // Render Visual Token Chips with alternating vibrant colors
+      const colorPalette = [
+        '#2563eb', '#059669', '#7c3aed', '#d97706', '#db2777', '#0891b2', '#65a30d', '#ea580c'
+      ];
+
+      UI.tokenVisualizerBox.innerHTML = "";
+      if (tokens.length === 0) {
+        UI.tokenVisualizerBox.innerHTML = `<span style="color: var(--text-muted);">Start typing above to see tokenized chunks...</span>`;
+      } else {
+        tokens.forEach((tok, i) => {
+          const color = colorPalette[i % colorPalette.length];
+          const chip = document.createElement('span');
+          chip.className = 'token-chip';
+          chip.style.backgroundColor = color;
+          chip.title = `Token #${i + 1} | ID: ${tok.id} | Length: ${tok.text.length} chars`;
+
+          // Format leading spaces cleanly with a visible dot indicator
+          let displayText = tok.text;
+          if (displayText.startsWith(' ')) {
+            chip.innerHTML = `<span class="token-space-dot">&bull;</span>${escapeHtml(displayText.slice(1))}`;
+          } else {
+            chip.textContent = displayText;
+          }
+
+          UI.tokenVisualizerBox.appendChild(chip);
+        });
+      }
+
+      // Update Multi-Model Cost Table
+      UI.modelPricingTableBody.innerHTML = "";
+      MODEL_PRICING.forEach(model => {
+        const inputCost = ((tokenCount / 1000000) * model.inputPerM);
+        const estOutputCost = (((tokenCount * 0.75) / 1000000) * model.outputPerM);
+        const contextUsagePct = ((tokenCount / model.contextWindow) * 100).toFixed(3);
+
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td style="font-weight: 600; color: #f1f5f9; font-family: var(--font-mono);">${model.name}</td>
+          <td style="font-family: var(--font-mono); color: #34d399;">$${inputCost.toFixed(6)}</td>
+          <td style="font-family: var(--font-mono); color: #94a3b8;">$${estOutputCost.toFixed(6)}</td>
+          <td style="font-family: var(--font-mono);">${(model.contextWindow / 1000).toLocaleString()}k toks</td>
+          <td><span class="badge ${contextUsagePct > 50 ? 'badge-warning' : 'badge-idle'}">${contextUsagePct}%</span></td>
+        `;
+        UI.modelPricingTableBody.appendChild(row);
+      });
+    }
+
+    // WHAT THIS DOES: Converts a numerical token count into estimated words, pages, and reading duration.
+    function updateReverseTokenEstimates() {
+      const tokens = parseInt(UI.reverseTokenInput.value, 10) || 0;
+      // 100 tokens ≈ 75 words
+      const estimatedWords = Math.round(tokens * 0.75);
+      // Standard book or document page ≈ 500 words
+      const estimatedPages = (estimatedWords / 500).toFixed(1);
+      // Average adult reading speed ≈ 250 words per minute
+      const readingMinutes = (estimatedWords / 250).toFixed(1);
+
+      UI.revWords.textContent = `~${estimatedWords.toLocaleString()} words`;
+      UI.revPages.textContent = `~${estimatedPages} pages`;
+      UI.revReadTime.textContent = `~${readingMinutes} mins`;
+    }
+
+    // WHAT THIS DOES: Safely escapes text characters for HTML rendering to prevent XSS vulnerabilities.
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // WHAT THIS DOES: Sets up event listeners for user clicks, tab switching, token inputs, and action buttons.
     function setupEventListeners() {
       // Pipeline dropdown selection change
       UI.pipelineSelect.addEventListener('change', (e) => {
@@ -1420,6 +1798,16 @@
 
       // Run full pipeline button
       UI.runPipelineBtn.addEventListener('click', runFullPipeline);
+
+      // Open Token Converter quick button in header
+      UI.openTokenizerBtn.addEventListener('click', () => {
+        UI.tabs.forEach(t => t.classList.remove('active'));
+        UI.tabTokensNav.classList.add('active');
+        document.querySelectorAll('.inspector-content').forEach(content => {
+          content.style.display = content.id === 'tab-tokens' ? 'flex' : 'none';
+        });
+        updateTokenConversion();
+      });
 
       // Re-run single step button
       UI.rerunStepBtn.addEventListener('click', () => {
@@ -1499,6 +1887,27 @@
         if (currentStep) updatePayloadPreview(currentStep);
       });
 
+      // Token Converter Input Listeners
+      UI.tokenInputText.addEventListener('input', updateTokenConversion);
+
+      UI.btnSamplePrompt.addEventListener('click', () => {
+        UI.tokenInputText.value = "You are a customer service assistant. Use the following context documents to answer the user query: According to Section 4.2 of our Terms of Service, all software licenses are eligible for refund within 14 calendar days.";
+        updateTokenConversion();
+      });
+
+      UI.btnSampleCode.addEventListener('click', () => {
+        UI.tokenInputText.value = '{"order_id": 8832, "customer": "Acme Corp", "total_usd": 349.50, "items": ["Cloud Server Pro", "Dedicated IP"]}';
+        updateTokenConversion();
+      });
+
+      UI.btnClearTokenText.addEventListener('click', () => {
+        UI.tokenInputText.value = "";
+        updateTokenConversion();
+      });
+
+      // Reverse Token Estimator Listener
+      UI.reverseTokenInput.addEventListener('input', updateReverseTokenEstimates);
+
       // Tab switching logic
       UI.tabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -1509,14 +1918,22 @@
           document.querySelectorAll('.inspector-content').forEach(content => {
             content.style.display = content.id === targetId ? 'flex' : 'none';
           });
+
+          // Refresh token calculations if switching to token converter tab
+          if (targetId === 'tab-tokens') {
+            updateTokenConversion();
+            updateReverseTokenEstimates();
+          }
         });
       });
     }
 
-    // WHAT THIS DOES: Initializes the application when the page finishes loading by attaching listeners and loading the RAG preset.
+    // WHAT THIS DOES: Initializes the application when the page finishes loading by attaching listeners, loading the RAG preset, and running initial token calculations.
     window.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
       loadPipeline("rag");
+      updateTokenConversion();
+      updateReverseTokenEstimates();
     });
   </script>
 </body>
